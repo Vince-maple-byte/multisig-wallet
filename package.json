@@ -1,0 +1,15 @@
+{
+  "name": "multisig-wallet",
+  "version": "1.0.0",
+  "description": "An ethereum wallet that requires multiple approvals for transactions.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.5"
+  }
+}
