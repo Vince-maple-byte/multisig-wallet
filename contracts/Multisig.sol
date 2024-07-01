@@ -13,41 +13,33 @@ Each address can execute a transaction that is approved
 */
 
 contract Multsig {
-    public Address[] owners;
-    public mapping (address => bool) isOwner;
-    public uint256 numberOfConfirmations;
+    address[] public owners;
+    mapping(address => bool) public isOwner;
+    uint256 public numberOfConfirmations;
     struct Transaction {
         address to;
         uint256 value;
-        bytes data;//This would contain the information such as calling a function so that we can execute it
+        bytes data; //This would contain the information such as calling a function so that we can execute it
         uint256 confirmations;
         uint256 rejections;
         bool executed;
     }
-    public Transaction[] transactions;
+    Transaction[] public transactions;
+    //When someone confirms a transaction
+    event ConfirmTransaction(address indexed sender, uint256 transactionIndex);
+    //When someone rejects a transaction
+    event RejectTransaction(address indexed sender, uint256 transactionIndex);
+    //When someone
+    event NewTransaction(address indexed sender, uint256 transactionIndex);
+    event SubmitTransaction(address indexed sender, uint256 transactionIndex);
+    event TransactionSubmitted(address);
 
-    public Multsig(){
-        owners = new uint256[5];
-        numberOfConfirmations = 0;
-    }
-
-    public Multsig(Address[] _owners){
+    constructor(address[] memory _owners, uint256 _numberofConfirmations) {
         owners = _owners;
-        for(uint256 i = 0; i < _owners.length; i++){
-            isOwner[_owners[i]] = true;
-        }
-
-        numberOfConfirmations = _owners.length/2+1;
-    }
-
-    public Multsig(Address[] _owners, uint256 _numberofConfirmations){
-        owners = _owners;
-        for(uint256 i = 0; i < _owners.length; i++){
+        for (uint256 i = 0; i < _owners.length; i++) {
             isOwner[_owners[i]] = true;
         }
 
         numberOfConfirmations = _numberofConfirmations;
     }
-
-   
 }
