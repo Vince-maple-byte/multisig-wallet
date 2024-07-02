@@ -99,6 +99,10 @@ contract Multsig {
         }
     }
 
+    function confirmTransaction(
+        uint256 transactionIndex
+    ) public ownersOnly transactionExists(transactionIndex) {}
+
     function getOwners() public view returns (address[] memory) {
         return owners;
     }
@@ -110,6 +114,14 @@ contract Multsig {
     //Modifiers
     modifier ownersOnly() {
         require(isOwner[msg.sender] == true, "Not an owner");
+        _;
+    }
+
+    modifier transactionExists(uint256 transactionIndex) {
+        require(
+            transactionIndex < transactions.length,
+            "Transaction does not exist"
+        );
         _;
     }
 }

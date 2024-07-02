@@ -10,7 +10,7 @@ const config: HardhatUserConfig = {
 	gasReporter: {
 		currency: "USD",
 		L1: "ethereum",
-		coinmarketcap: COINMARKETCAP_KEY!,
+		coinmarketcap: "6f81c591-04ce-465e-857e-42289069a9fc",
 	},
 };
 
