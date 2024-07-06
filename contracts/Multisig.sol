@@ -18,9 +18,6 @@ contract Multsig {
     uint256 public numberOfConfirmations;
     struct Transaction {
         address to;
-        //This the person who created the transaction, this can be important when the transaction is rejected and we need to return
-        //the money they sent
-        address from;
         uint256 value;
         bytes data; //This would contain the information such as calling a function so that we can execute it
         uint256 confirmations;
@@ -81,6 +78,8 @@ contract Multsig {
 
     function deposit() public {}
 
+    function withdraw() public {}
+
     function newTransaction(
         address _to,
         uint256 _value,
@@ -88,7 +87,6 @@ contract Multsig {
     ) public payable ownersOnly {
         Transaction memory createdTransaction;
         createdTransaction.to = _to;
-        createdTransaction.from = msg.sender;
         createdTransaction.value = _value;
         createdTransaction.data = _data;
         createdTransaction.confirmations = 1;
