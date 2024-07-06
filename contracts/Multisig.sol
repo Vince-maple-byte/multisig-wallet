@@ -26,6 +26,7 @@ contract Multsig {
         uint256 confirmations;
         uint256 rejections;
         bool executed;
+        bool rejected;
     }
     Transaction[] public transactions;
     //When someone confirms a transaction
@@ -47,7 +48,7 @@ contract Multsig {
     );
     //This would signal if the transaction is ready to be submitted by confirmations == numberOfConfirmations
     event SubmitTransaction(
-        address indexed sender,
+        address indexed to,
         uint256 indexed transactionIndex
     );
     //When a transaction is submitted you send this event to now that the transaction has already been submitted
@@ -62,7 +63,7 @@ contract Multsig {
         *If the transaction is re
     */
     event TransactionRejected(
-        address indexed sender,
+        address indexed to,
         uint256 indexed transactionIndex
     );
 
@@ -77,6 +78,9 @@ contract Multsig {
 
     //Functions
     //This creates a new transaction
+
+    function deposit() public {}
+
     function newTransaction(
         address _to,
         uint256 _value,
@@ -90,6 +94,7 @@ contract Multsig {
         createdTransaction.confirmations = 1;
         createdTransaction.rejections = 0;
         createdTransaction.executed = false;
+        createdTransaction.rejected = false;
 
         transactions.push(createdTransaction);
 
@@ -99,9 +104,89 @@ contract Multsig {
         }
     }
 
+    //Make sure that when we execute this method in the frontend we make sure that the user submit a confirmTransaction or a rejectTransaction
     function confirmTransaction(
         uint256 transactionIndex
-    ) public ownersOnly transactionExists(transactionIndex) {}
+    )
+        public
+        ownersOnly
+        transactionExists(transactionIndex)
+        checkTransactionSubmitted(transactionIndex)
+        checkTransactionRejected(transactionIndex)
+    {
+        transactions[transactionIndex].confirmations =
+            transactions[transactionIndex].confirmations +
+            1;
+
+        emit ConfirmTransaction(
+            msg.sender,
+            transactionIndex,
+            transactions[transactionIndex].confirmations
+        );
+        if (
+            transactions[transactionIndex].confirmations ==
+            numberOfConfirmations
+        ) {
+            emit SubmitTransaction(
+                transactions[transactionIndex].to,
+                transactionIndex
+            );
+        }
+    }
+
+    //Make sure that when we execute this method in the frontend we make sure that the user submit a confirmTransaction or a rejectTransaction
+    function rejectTransaction(
+        uint256 transactionIndex
+    )
+        public
+        ownersOnly
+        transactionExists(transactionIndex)
+        checkTransactionSubmitted(transactionIndex)
+        checkTransactionRejected(transactionIndex)
+    {
+        transactions[transactionIndex].rejections =
+            transactions[transactionIndex].rejections +
+            1;
+
+        emit RejectTransaction(
+            msg.sender,
+            transactionIndex,
+            transactions[transactionIndex].rejections
+        );
+        if (
+            owners.length - transactions[transactionIndex].rejections <
+            numberOfConfirmations
+        ) {
+            transactions[transactionIndex].rejected = true;
+            emit TransactionRejected(
+                transactions[transactionIndex].to,
+                transactionIndex
+            );
+        }
+    }
+
+    function submit(
+        uint256 transactionIndex
+    )
+        public
+        payable
+        ownersOnly
+        transactionExists(transactionIndex)
+        readyForSubmission(transactionIndex)
+        checkTransactionSubmitted(transactionIndex)
+        checkTransactionRejected(transactionIndex)
+    {
+        address _to = transactions[transactionIndex].to;
+        (bool sent, ) = _to.call{value: transactions[transactionIndex].value}(
+            transactions[transactionIndex].data
+        );
+        require(sent, "Failed to send Ether");
+        transactions[transactionIndex].executed = true;
+        emit TransactionSubmitted(
+            transactions[transactionIndex].to,
+            transactionIndex
+        );
+    }
 
     function getOwners() public view returns (address[] memory) {
         return owners;
@@ -121,6 +206,24 @@ contract Multsig {
         require(
             transactionIndex < transactions.length,
             "Transaction does not exist"
+        );
+        _;
+    }
+
+    modifier checkTransactionSubmitted(uint256 transactionIndex) {
+        require(!transactions[transactionIndex].executed, "Already submitted");
+        _;
+    }
+
+    modifier checkTransactionRejected(uint256 transactionIndex) {
+        require(!transactions[transactionIndex].rejected, "Already rejected");
+        _;
+    }
+
+    modifier readyForSubmission(uint256 transactionIndex) {
+        require(
+            transactions[transactionIndex].executed,
+            "Needs more confirmations to be submitted"
         );
         _;
     }
