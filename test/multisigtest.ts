@@ -31,6 +31,19 @@ describe("Multi Signature", () => {
 		expect(contractOwners.length).to.equal(owners.length);
 	});
 
+	it("Should have the wallet increase the balance", async () => {
+		const contractAddress = await multisig.getAddress();
+
+		await signers[0].sendTransaction({
+			to: contractAddress,
+			value: "100000",
+		});
+		const contractBalance = await signers[0].provider.getBalance(
+			contractAddress
+		);
+		expect(contractBalance).to.equal("100000");
+	});
+
 	describe("New Transaction Tests", () => {
 		it("Should return a revert that it is not an owner sending a new transaction", async () => {
 			const nonOwners = signers

@@ -25,6 +25,10 @@ contract Multsig {
         bool executed;
         bool rejected;
     }
+
+    //To tell if the owner already made a confirmation or rejection in the transaction
+    mapping(uint256 transactionIndex => mapping(address => bool))
+        public hasConfirmedOrRejected;
     Transaction[] public transactions;
     //When someone confirms a transaction
     event ConfirmTransaction(
@@ -76,9 +80,7 @@ contract Multsig {
     //Functions
     //This creates a new transaction
 
-    function deposit() public {}
-
-    function withdraw() public {}
+    receive() external payable {}
 
     function newTransaction(
         address _to,
@@ -95,6 +97,7 @@ contract Multsig {
         createdTransaction.rejected = false;
 
         transactions.push(createdTransaction);
+        hasConfirmedOrRejected[transactions.length - 1][msg.sender] = true;
 
         emit NewTransaction(msg.sender, transactions.length - 1);
         if (createdTransaction.confirmations == numberOfConfirmations) {
@@ -111,10 +114,13 @@ contract Multsig {
         transactionExists(transactionIndex)
         checkTransactionSubmitted(transactionIndex)
         checkTransactionRejected(transactionIndex)
+        confirmationOrRejectionAlreadyMade(transactionIndex)
     {
         transactions[transactionIndex].confirmations =
             transactions[transactionIndex].confirmations +
             1;
+
+        hasConfirmedOrRejected[transactionIndex][msg.sender] = true;
 
         emit ConfirmTransaction(
             msg.sender,
@@ -141,10 +147,13 @@ contract Multsig {
         transactionExists(transactionIndex)
         checkTransactionSubmitted(transactionIndex)
         checkTransactionRejected(transactionIndex)
+        confirmationOrRejectionAlreadyMade(transactionIndex)
     {
         transactions[transactionIndex].rejections =
             transactions[transactionIndex].rejections +
             1;
+
+        hasConfirmedOrRejected[transactionIndex][msg.sender] = true;
 
         emit RejectTransaction(
             msg.sender,
@@ -222,6 +231,14 @@ contract Multsig {
         require(
             transactions[transactionIndex].executed,
             "Needs more confirmations to be submitted"
+        );
+        _;
+    }
+
+    modifier confirmationOrRejectionAlreadyMade(uint256 transactionIndex) {
+        require(
+            hasConfirmedOrRejected[transactionIndex][msg.sender] == false,
+            "Already made a choice between confirm and rejection"
         );
         _;
     }
